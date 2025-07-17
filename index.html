@@ -1,124 +1,204 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Attendance Tracker</title>
+    <title>Advanced Attendance Tracker with Weekly Dates</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            text-align: center;
+            padding: 8px;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        select, button {
+            padding: 5px;
+            margin-top: 4px;
+        }
+        .present {
+            background-color: #a0e7a0;
+        }
+        .absent {
+            background-color: #f7a6a6;
+        }
+        .cancelled {
+            background-color: #ccc;
+        }
+    </style>
 </head>
 <body>
-  <h1>📅 Monday - 14/07/2025 Attendance</h1>
+    <h2>Advanced Weekly Attendance Tracker</h2>
+    <p><strong>Current Week Starting:</strong> <span id="weekStart"></span></p>
+    <button onclick="generateNextWeek()">Next Week ➕</button>
+    <button onclick="endTracking()">End Tracking 🛑</button>
 
-  <div id="schedule">
-    <!-- Each subject row -->
-    <div>
-      <strong>8:40–9:30: Linear Control Systems</strong><br>
-      <select id="lcs">
-        <option value="">-- Select --</option>
-        <option value="Present">Present</option>
-        <option value="Absent">Absent</option>
-        <option value="Class Cancelled">Class Cancelled</option>
-        <option value="Substitute - DSP">Substitute - DSP</option>
-        <option value="Substitute - VLSI">Substitute - VLSI</option>
-        <option value="Substitute - AWP">Substitute - AWP</option>
-      </select>
-    </div>
-    <div>
-      <strong>9:30–10:20: Digital Signal Processing</strong><br>
-      <select id="dsp">
-        <option value="">-- Select --</option>
-        <option value="Present">Present</option>
-        <option value="Absent">Absent</option>
-        <option value="Class Cancelled">Class Cancelled</option>
-        <option value="Substitute - LCS">Substitute - LCS</option>
-        <option value="Substitute - VLSI">Substitute - VLSI</option>
-        <option value="Substitute - AWP">Substitute - AWP</option>
-      </select>
-    </div>
-    <div>
-      <strong>10:20–11:10: VLSI Design</strong><br>
-      <select id="vlsi">
-        <option value="">-- Select --</option>
-        <option value="Present">Present</option>
-        <option value="Absent">Absent</option>
-        <option value="Class Cancelled">Class Cancelled</option>
-        <option value="Substitute - DSP">Substitute - DSP</option>
-        <option value="Substitute - LCS">Substitute - LCS</option>
-        <option value="Substitute - AWP">Substitute - AWP</option>
-      </select>
-    </div>
-    <div>
-      <strong>11:10–12:00: PE-1 Antennas & Wave Propagation</strong><br>
-      <select id="awp">
-        <option value="">-- Select --</option>
-        <option value="Present">Present</option>
-        <option value="Absent">Absent</option>
-        <option value="Class Cancelled">Class Cancelled</option>
-        <option value="Substitute - DSP">Substitute - DSP</option>
-        <option value="Substitute - VLSI">Substitute - VLSI</option>
-        <option value="Substitute - LCS">Substitute - LCS</option>
-      </select>
-    </div>
-    <div>
-      <strong>12:00–12:50: Lunch Break</strong><br>
-      <select disabled>
-        <option value="">Break Time 🍱</option>
-      </select>
-    </div>
-    <div>
-      <strong>12:50–3:20: SOC Microwave Circuits & Antenna Design Lab</strong><br>
-      <select id="soclab">
-        <option value="">-- Select --</option>
-        <option value="Present">Present</option>
-        <option value="Absent">Absent</option>
-        <option value="Class Cancelled">Class Cancelled</option>
-        <option value="Substitute - DSP">Substitute - DSP</option>
-        <option value="Substitute - VLSI">Substitute - VLSI</option>
-        <option value="Substitute - LCS">Substitute - LCS</option>
-      </select>
-    </div>
-  </div>
+    <div id="tablesContainer"></div>
 
-  <br>
-  <button onclick="submitAttendance()">✅ Submit Attendance</button>
+    <h3>📊 Attendance Summary</h3>
+    <div id="summary"></div>
 
-  <script>
-    function sendAttendanceToSheet(subject, date, status) {
-      const url = "https://script.google.com/macros/s/AKfycbxbVKjWTAy038lF_j6498L5T8N-U2M3JPOfwOwh1GyiMGKP6Z_SBpNSK616hDCpkHQHzA/exec";
+    <script>
+        const subjectsList = [
+            'Linear Control Systems', 'Digital Signal Processing', 'VLSI Design',
+            'PE-1 Antennas & Wave Propagation', 'SOC Microwave Circuits & Antenna Design lab',
+            'DS Lab', 'Open Elective -1 Data Structures', 'Essence of Indian Traditional Knowledge',
+            'Mini Project -1/Intern-1', 'Library/Sports', 'VLSI Design Lab'
+        ];
 
-      fetch(url, {
-        method: "POST",
-        body: JSON.stringify({
-          subject: subject,
-          date: date,
-          status: status
-        }),
-        headers: {
-          "Content-Type": "application/json"
+        const defaultTimeTable = {
+            'Monday': ['Linear Control Systems', 'Digital Signal Processing', 'VLSI Design', 'PE-1 Antennas & Wave Propagation', 'Lunch', 'SOC Microwave Circuits & Antenna Design lab', 'SOC Microwave Circuits & Antenna Design lab', 'SOC Microwave Circuits & Antenna Design lab'],
+            'Tuesday': ['VLSI Design', 'Linear Control Systems', 'Digital Signal Processing', 'PE-1 Antennas & Wave Propagation', 'Lunch', '', '', ''],
+            'Wednesday': ['DS Lab', 'DS Lab', 'DS Lab', 'Open Elective -1 Data Structures', 'Lunch', 'Essence of Indian Traditional Knowledge', 'Digital Signal Processing', 'VLSI Design'],
+            'Thursday': ['PE-1 Antennas & Wave Propagation', 'Digital Signal Processing', 'Mini Project -1/Intern-1', 'Open Elective -1 Data Structures', 'Lunch', 'VLSI Design', 'Linear Control Systems', 'Library/Sports'],
+            'Friday': ['Essence of Indian Traditional Knowledge', 'Linear Control Systems', 'PE-1 Antennas & Wave Propagation', 'Open Elective -1 Data Structures', 'Lunch', 'VLSI Design Lab', 'VLSI Design Lab', 'VLSI Design Lab']
+        };
+
+        const attendanceData = {};
+        subjectsList.forEach(sub => attendanceData[sub] = { present: 0, total: 0 });
+
+        const tablesContainer = document.getElementById('tablesContainer');
+        const summary = document.getElementById('summary');
+        const weekStartDisplay = document.getElementById('weekStart');
+
+        let currentMonday = new Date('2025-07-14');
+
+        function formatDate(date) {
+            return date.toISOString().split('T')[0];
         }
-      })
-      .then(res => res.text())
-      .then(data => console.log(data))
-      .catch(err => console.error("Error:", err));
-    }
 
-    function submitAttendance() {
-      const date = "14-07-2025";
-
-      const subjects = {
-        "Linear Control Systems": document.getElementById("lcs").value,
-        "Digital Signal Processing": document.getElementById("dsp").value,
-        "VLSI Design": document.getElementById("vlsi").value,
-        "Antennas & Wave Propagation": document.getElementById("awp").value,
-        "SOC Microwave Lab": document.getElementById("soclab").value
-      };
-
-      for (const [subject, status] of Object.entries(subjects)) {
-        if (status !== "") {
-          sendAttendanceToSheet(subject, date, status);
+        function getNextMonday(date) {
+            const next = new Date(date);
+            next.setDate(date.getDate() + 7);
+            return next;
         }
-      }
 
-      alert("✅ Attendance submitted!");
-    }
-  </script>
+        function generateNextWeek() {
+            const table = document.createElement('table');
+            const thead = document.createElement('thead');
+            thead.innerHTML = `
+                <tr>
+                    <th>Day / Period</th>
+                    <th>8:40-9:30</th>
+                    <th>9:30-10:20</th>
+                    <th>10:20-11:10</th>
+                    <th>11:10-12:00</th>
+                    <th>12:00-12:50 (Lunch)</th>
+                    <th>12:50-1:40</th>
+                    <th>1:40-2:30</th>
+                    <th>2:30-3:20</th>
+                </tr>`;
+            table.appendChild(thead);
+
+            const tbody = document.createElement('tbody');
+
+            Object.entries(defaultTimeTable).forEach(([day, periods], idx) => {
+                const row = document.createElement('tr');
+                const dayCell = document.createElement('td');
+
+                const dateOfDay = new Date(currentMonday);
+                dateOfDay.setDate(currentMonday.getDate() + idx);
+                dayCell.textContent = `${day} (${formatDate(dateOfDay)})`;
+                row.appendChild(dayCell);
+
+                periods.forEach(subject => {
+                    const cell = document.createElement('td');
+                    if (subject === 'Lunch' || subject === '') {
+                        cell.textContent = subject;
+                        row.appendChild(cell);
+                        return;
+                    }
+
+                    const selectStatus = document.createElement('select');
+                    ['','Present', 'Absent', 'Class Cancelled'].forEach(opt => {
+                        const option = document.createElement('option');
+                        option.value = opt;
+                        option.textContent = opt;
+                        selectStatus.appendChild(option);
+                    });
+
+                    const selectSub = document.createElement('select');
+                    subjectsList.forEach(sub => {
+                        const option = document.createElement('option');
+                        option.value = sub;
+                        option.textContent = sub;
+                        if (sub === subject) option.selected = true;
+                        selectSub.appendChild(option);
+                    });
+
+                    selectStatus.onchange = () => {
+                        const actualSub = selectSub.value;
+                        if (!attendanceData[actualSub]) attendanceData[actualSub] = { present: 0, total: 0 };
+                        if (selectStatus.value === 'Present') {
+                            attendanceData[actualSub].present++;
+                            attendanceData[actualSub].total++;
+                            cell.className = 'present';
+                        } else if (selectStatus.value === 'Absent') {
+                            attendanceData[actualSub].total++;
+                            cell.className = 'absent';
+                        } else if (selectStatus.value === 'Class Cancelled') {
+                            cell.className = 'cancelled';
+                        }
+                        updateSummary();
+                    };
+
+                    cell.appendChild(document.createTextNode(subject));
+                    cell.appendChild(document.createElement('br'));
+                    cell.appendChild(selectSub);
+                    cell.appendChild(selectStatus);
+                    row.appendChild(cell);
+                });
+
+                tbody.appendChild(row);
+            });
+
+            table.appendChild(tbody);
+            tablesContainer.appendChild(document.createElement('hr'));
+            tablesContainer.appendChild(table);
+
+            weekStartDisplay.textContent = formatDate(currentMonday);
+            currentMonday = getNextMonday(currentMonday);
+        }
+
+        function updateSummary() {
+            let html = '<table><tr><th>Subject</th><th>Present</th><th>Total</th><th>% Attendance</th><th>Need for 60%</th><th>Need for 75%</th></tr>';
+            let overallPresent = 0, overallTotal = 0;
+
+            for (let subject in attendanceData) {
+                const data = attendanceData[subject];
+                if (data.total === 0) continue;
+                const percent = ((data.present / data.total) * 100).toFixed(2);
+                const neededFor60 = Math.max(0, Math.ceil((0.6 * data.total - data.present) / (1 - 0.6)));
+                const neededFor75 = Math.max(0, Math.ceil((0.75 * data.total - data.present) / (1 - 0.75)));
+                html += `<tr><td>${subject}</td><td>${data.present}</td><td>${data.total}</td><td>${percent}%</td><td>${neededFor60}</td><td>${neededFor75}</td></tr>`;
+                overallPresent += data.present;
+                overallTotal += data.total;
+            }
+
+            const overallPercent = ((overallPresent / overallTotal) * 100).toFixed(2);
+            html += `<tr><th colspan="3">Overall</th><th>${overallPercent}%</th><th colspan="2">Need: ${Math.max(0, Math.ceil((0.75 * overallTotal - overallPresent) / (1 - 0.75)))} classes</th></tr>`;
+            html += '</table>';
+            summary.innerHTML = html;
+        }
+
+        function endTracking() {
+            alert("Tracking stopped. You can still review your data, but no more weeks will be added.");
+        }
+
+        // Initial week
+        generateNextWeek();
+    </script>
 </body>
 </html>
+
 
