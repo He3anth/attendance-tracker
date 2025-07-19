@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Sign Up - Attendance Tracker</title>
+  <style>
+    body { font-family: Arial; text-align: center; margin-top: 100px; }
+    input, button { padding: 10px; margin: 10px; width: 200px; }
+  </style>
+</head>
+<body>
+  <h1>Sign Up</h1>
+  <input type="text" id="signupUsername" placeholder="Username" required><br>
+  <input type="password" id="signupPassword" placeholder="Password" required><br>
+  <button onclick="signup()">Sign Up</button>
+  <p>Already have an account? <a href="login.html">Login here</a></p>
+
+  <script>
+    async function signup() {
+      const username = document.getElementById("signupUsername").value.trim();
+      const password = document.getElementById("signupPassword").value.trim();
+
+      if (!username || !password) {
+        alert("Please fill both fields");
+        return;
+      }
+
+      const response = await fetch("https://script.google.com/macros/s/AKfycbyVVks5BOLcLjO4zLwovwvGDVKePP7ErOK1lCnuoDdTMIB30pJscl1eGZipcuqsLetRmA/exec", {
+        method: "POST",
+        body: new URLSearchParams({
+          action: "signupUser",
+          username,
+          password
+        })
+      });
+
+      const result = await response.text();
+      alert(result);
+      if (result.includes("success")) {
+        window.location.href = "login.html";
+      }
+    }
+  </script>
+</body>
+</html>
