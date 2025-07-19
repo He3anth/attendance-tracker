@@ -6,36 +6,32 @@
 <body>
   <h2>Login</h2>
   <form id="login-form">
-    <label for="username">Username:</label><br>
-    <input type="text" id="username" name="username" required><br><br>
+    <label>Email:</label><br>
+    <input type="email" name="email" required><br><br>
 
-    <label for="password">Password:</label><br>
-    <input type="password" id="password" name="password" required><br><br>
+    <label>Password:</label><br>
+    <input type="password" name="password" required><br><br>
 
-    <button type="submit">Login</button>
+    <input type="submit" value="Login">
   </form>
 
-  <script>
-    const scriptURL = "https://script.google.com/macros/s/AKfycbyVVks5BOLcLjO4zLwovwvGDVKePP7ErOK1lCnuoDdTMIB30pJscl1eGZipcuqsLetRmA/exec"; // same as used in signup
+  <p>Don't have an account? <a href="index.html">Sign up here</a></p>
 
+  <script>
     document.getElementById("login-form").addEventListener("submit", function(e) {
       e.preventDefault();
+      const formData = new FormData(e.target);
 
-      const formData = new FormData(this);
-      formData.append("action", "login");
-
-      fetch(scriptURL, {
+      fetch("https://script.google.com/macros/s/AKfycbyVVks5BOLcLjO4zLwovwvGDVKePP7ErOK1lCnuoDdTMIB30pJscl1eGZipcuqsLetRmA/exec", {
         method: "POST",
-        body: formData
+        body: new URLSearchParams(formData),
       })
       .then(response => response.text())
-      .then(text => {
-        if (text.toLowerCase().includes("success")) {
-          alert("Login successful!");
-          localStorage.setItem("username", document.getElementById("username").value);
-          window.location.href = "index.html"; // redirect to main attendance tracker
-        } else {
-          alert(text);
+      .then(result => {
+        alert(result);
+        if (result.includes("Success")) {
+          localStorage.setItem("username", formData.get("email"));
+          window.location.href = "attendance.html";
         }
       })
       .catch(error => {
@@ -45,4 +41,3 @@
   </script>
 </body>
 </html>
-
