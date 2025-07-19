@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Advanced Attendance Tracker with Weekly Dates</title>
+    <title>Weekly Attendance Tracker</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -26,19 +26,14 @@
             padding: 5px;
             margin-top: 4px;
         }
-        .present {
-            background-color: #a0e7a0;
-        }
-        .absent {
-            background-color: #f7a6a6;
-        }
-        .cancelled {
-            background-color: #ccc;
-        }
+        .present { background-color: #a0e7a0; }
+        .absent { background-color: #f7a6a6; }
+        .cancelled { background-color: #ccc; }
     </style>
 </head>
 <body>
-    <h2>Advanced Weekly Attendance Tracker</h2>
+    <h2>Weekly Attendance Tracker</h2>
+    <p><strong>Logged in as:</strong> <span id="usernameDisplay"></span></p>
     <p><strong>Current Week Starting:</strong> <span id="weekStart"></span></p>
     <button onclick="generateNextWeek()">Next Week ➕</button>
     <button onclick="endTracking()">End Tracking 🛑</button>
@@ -50,6 +45,9 @@
     <div id="summary"></div>
 
     <script>
+        const username = localStorage.getItem("username") || "unknown_user";
+        document.getElementById("usernameDisplay").textContent = username;
+
         const subjectsList = [
             'Linear Control Systems', 'Digital Signal Processing', 'VLSI Design',
             'PE-1 Antennas & Wave Propagation', 'SOC Microwave Circuits & Antenna Design lab',
@@ -65,14 +63,13 @@
             'Friday': ['Essence of Indian Traditional Knowledge', 'Linear Control Systems', 'PE-1 Antennas & Wave Propagation', 'Open Elective -1 Data Structures', 'Lunch', 'VLSI Design Lab', 'VLSI Design Lab', 'VLSI Design Lab']
         };
 
-        const attendanceData = {};
-        subjectsList.forEach(sub => attendanceData[sub] = { present: 0, total: 0 });
-
         const tablesContainer = document.getElementById('tablesContainer');
         const summary = document.getElementById('summary');
         const weekStartDisplay = document.getElementById('weekStart');
 
         let currentMonday = new Date('2025-07-14');
+        let weekCount = 1;
+        const allWeeksAttendance = [];
 
         function formatDate(date) {
             return date.toISOString().split('T')[0];
@@ -85,6 +82,9 @@
         }
 
         function generateNextWeek() {
+            const weekAttendance = {};
+            subjectsList.forEach(sub => weekAttendance[sub] = { present: 0, total: 0 });
+
             const table = document.createElement('table');
             const thead = document.createElement('thead');
             thead.innerHTML = `
@@ -106,7 +106,6 @@
             Object.entries(defaultTimeTable).forEach(([day, periods], idx) => {
                 const row = document.createElement('tr');
                 const dayCell = document.createElement('td');
-
                 const dateOfDay = new Date(currentMonday);
                 dateOfDay.setDate(currentMonday.getDate() + idx);
                 dayCell.textContent = `${day} (${formatDate(dateOfDay)})`;
@@ -128,24 +127,14 @@
                         selectStatus.appendChild(option);
                     });
 
-                    const selectSub = document.createElement('select');
-                    subjectsList.forEach(sub => {
-                        const option = document.createElement('option');
-                        option.value = sub;
-                        option.textContent = sub;
-                        if (sub === subject) option.selected = true;
-                        selectSub.appendChild(option);
-                    });
-
                     selectStatus.onchange = () => {
-                        const actualSub = selectSub.value;
-                        if (!attendanceData[actualSub]) attendanceData[actualSub] = { present: 0, total: 0 };
+                        if (!weekAttendance[subject]) weekAttendance[subject] = { present: 0, total: 0 };
                         if (selectStatus.value === 'Present') {
-                            attendanceData[actualSub].present++;
-                            attendanceData[actualSub].total++;
+                            weekAttendance[subject].present++;
+                            weekAttendance[subject].total++;
                             cell.className = 'present';
                         } else if (selectStatus.value === 'Absent') {
-                            attendanceData[actualSub].total++;
+                            weekAttendance[subject].total++;
                             cell.className = 'absent';
                         } else if (selectStatus.value === 'Class Cancelled') {
                             cell.className = 'cancelled';
@@ -155,7 +144,6 @@
 
                     cell.appendChild(document.createTextNode(subject));
                     cell.appendChild(document.createElement('br'));
-                    cell.appendChild(selectSub);
                     cell.appendChild(selectStatus);
                     row.appendChild(cell);
                 });
@@ -169,14 +157,25 @@
 
             weekStartDisplay.textContent = formatDate(currentMonday);
             currentMonday = getNextMonday(currentMonday);
+            allWeeksAttendance.push({ week: `Week ${weekCount}`, attendance: weekAttendance });
+            weekCount++;
         }
 
         function updateSummary() {
+            const combined = {};
+            allWeeksAttendance.forEach(w => {
+                for (let subject in w.attendance) {
+                    if (!combined[subject]) combined[subject] = { present: 0, total: 0 };
+                    combined[subject].present += w.attendance[subject].present;
+                    combined[subject].total += w.attendance[subject].total;
+                }
+            });
+
             let html = '<table><tr><th>Subject</th><th>Present</th><th>Total</th><th>% Attendance</th><th>Need for 60%</th><th>Need for 75%</th></tr>';
             let overallPresent = 0, overallTotal = 0;
 
-            for (let subject in attendanceData) {
-                const data = attendanceData[subject];
+            for (let subject in combined) {
+                const data = combined[subject];
                 if (data.total === 0) continue;
                 const percent = ((data.present / data.total) * 100).toFixed(2);
                 const neededFor60 = Math.max(0, Math.ceil((0.6 * data.total - data.present) / (1 - 0.6)));
@@ -196,12 +195,17 @@
             alert("Tracking stopped. You can still review your data, but no more weeks will be added.");
         }
 
-        const scriptURL = "https://script.google.com/macros/s/AKfycbyVVks5BOLcLjO4zLwovwvGDVKePP7ErOK1lCnuoDdTMIB30pJscl1eGZipcuqsLetRmA/exec";
+        const scriptURL = "https://script.google.com/macros/s/AKfycbyQ1g4EWj7D0CjNfzxQHMkvziD0MMwC17CUZt8JYmfCvxClGGVZPebo9q2tMHU_ET_2PQ/exec";
 
         function saveToSheet() {
             fetch(scriptURL, {
                 method: 'POST',
-                body: JSON.stringify({ attendance: attendanceData, timestamp: new Date().toISOString() }),
+                body: JSON.stringify({
+                    action: "submitAttendance",
+                    username: username,
+                    attendance: allWeeksAttendance,
+                    timestamp: new Date().toISOString()
+                }),
                 headers: { "Content-Type": "application/json" }
             })
             .then(res => res.text())
@@ -209,7 +213,7 @@
             .catch(err => alert("Error: " + err));
         }
 
-        // Initial week
+        // Load initial week
         generateNextWeek();
     </script>
 </body>
