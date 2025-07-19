@@ -1,45 +1,64 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Sign Up</title>
+  <title>Signup</title>
+  <style>
+    body {
+      display: flex;
+      height: 100vh;
+      justify-content: center;
+      align-items: center;
+      background-color: #f0f0f0;
+      font-family: Arial, sans-serif;
+    }
+    .form-container {
+      background: white;
+      padding: 20px 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    input, button {
+      margin: 10px 0;
+      padding: 10px;
+      width: 100%;
+    }
+    a {
+      display: block;
+      margin-top: 10px;
+    }
+  </style>
 </head>
 <body>
-  <h2>Sign Up</h2>
-  <form id="signup-form">
-    <label>Name:</label><br>
-    <input type="text" name="name" required><br><br>
-
-    <label>Email:</label><br>
-    <input type="email" name="email" required><br><br>
-
-    <label>Password:</label><br>
-    <input type="password" name="password" required><br><br>
-
-    <input type="submit" value="Sign Up">
-  </form>
-
-  <p>Already have an account? <a href="login.html">Login here</a></p>
+  <div class="form-container">
+    <h2>Signup</h2>
+    <input type="text" id="username" placeholder="Username" required><br>
+    <input type="password" id="password" placeholder="Password" required><br>
+    <button onclick="signup()">Sign Up</button>
+    <a href="login.html">Already have an account? Login</a>
+  </div>
 
   <script>
-    document.getElementById("signup-form").addEventListener("submit", function(e) {
-      e.preventDefault();
-      const formData = new FormData(e.target);
+    function signup() {
+      const username = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
 
-      fetch("https://script.google.com/macros/s/AKfycbyVVks5BOLcLjO4zLwovwvGDVKePP7ErOK1lCnuoDdTMIB30pJscl1eGZipcuqsLetRmA/exec", {
+      fetch("https://script.google.com/macros/s/AKfycbyQ1g4EWj7D0CjNfzxQHMkvziD0MMwC17CUZt8JYmfCvxClGGVZPebo9q2tMHU_ET_2PQ/exec", {
         method: "POST",
-        body: new URLSearchParams(formData),
+        body: new URLSearchParams({
+          action: "signup",
+          username: username,
+          password: password
+        })
       })
-      .then(response => response.text())
-      .then(result => {
-        alert(result);
-        if (result.includes("Success")) {
+      .then(res => res.text())
+      .then(data => {
+        alert(data);
+        if (data === "Signup success") {
           window.location.href = "login.html";
         }
-      })
-      .catch(error => {
-        alert("Error: " + error);
       });
-    });
+    }
   </script>
 </body>
 </html>
