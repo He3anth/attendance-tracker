@@ -83,7 +83,6 @@
 
         function generateNextWeek() {
             const weekAttendance = {};
-            subjectsList.forEach(sub => weekAttendance[sub] = { present: 0, total: 0 });
 
             const table = document.createElement('table');
             const thead = document.createElement('thead');
@@ -119,32 +118,45 @@
                         return;
                     }
 
-                    const selectStatus = document.createElement('select');
-                    ['','Present', 'Absent', 'Class Cancelled'].forEach(opt => {
+                    const subjectDropdown = document.createElement('select');
+                    subjectsList.forEach(sub => {
                         const option = document.createElement('option');
-                        option.value = opt;
-                        option.textContent = opt;
-                        selectStatus.appendChild(option);
+                        option.value = sub;
+                        option.textContent = sub;
+                        if (sub === subject) option.selected = true;
+                        subjectDropdown.appendChild(option);
                     });
 
-                    selectStatus.onchange = () => {
-                        if (!weekAttendance[subject]) weekAttendance[subject] = { present: 0, total: 0 };
-                        if (selectStatus.value === 'Present') {
-                            weekAttendance[subject].present++;
-                            weekAttendance[subject].total++;
+                    const attendanceDropdown = document.createElement('select');
+                    ['', 'Present', 'Absent', 'Class Cancelled'].forEach(status => {
+                        const option = document.createElement('option');
+                        option.value = status;
+                        option.textContent = status;
+                        attendanceDropdown.appendChild(option);
+                    });
+
+                    attendanceDropdown.onchange = () => {
+                        const selectedSubject = subjectDropdown.value;
+                        if (!weekAttendance[selectedSubject]) {
+                            weekAttendance[selectedSubject] = { present: 0, total: 0 };
+                        }
+
+                        if (attendanceDropdown.value === 'Present') {
+                            weekAttendance[selectedSubject].present++;
+                            weekAttendance[selectedSubject].total++;
                             cell.className = 'present';
-                        } else if (selectStatus.value === 'Absent') {
-                            weekAttendance[subject].total++;
+                        } else if (attendanceDropdown.value === 'Absent') {
+                            weekAttendance[selectedSubject].total++;
                             cell.className = 'absent';
-                        } else if (selectStatus.value === 'Class Cancelled') {
+                        } else if (attendanceDropdown.value === 'Class Cancelled') {
                             cell.className = 'cancelled';
                         }
                         updateSummary();
                     };
 
-                    cell.appendChild(document.createTextNode(subject));
+                    cell.appendChild(subjectDropdown);
                     cell.appendChild(document.createElement('br'));
-                    cell.appendChild(selectStatus);
+                    cell.appendChild(attendanceDropdown);
                     row.appendChild(cell);
                 });
 
@@ -213,8 +225,7 @@
             .catch(err => alert("Error: " + err));
         }
 
-        // Load initial week
-        generateNextWeek();
+        generateNextWeek(); // Load Week 1
     </script>
 </body>
 </html>
