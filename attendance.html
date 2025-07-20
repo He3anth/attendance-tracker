@@ -83,6 +83,7 @@
 
         function generateNextWeek() {
             const weekAttendance = {};
+            subjectsList.forEach(sub => weekAttendance[sub] = { present: 0, total: 0 });
 
             const table = document.createElement('table');
             const thead = document.createElement('thead');
@@ -112,6 +113,7 @@
 
                 periods.forEach(subject => {
                     const cell = document.createElement('td');
+
                     if (subject === 'Lunch' || subject === '') {
                         cell.textContent = subject;
                         row.appendChild(cell);
@@ -120,43 +122,52 @@
 
                     const subjectDropdown = document.createElement('select');
                     subjectsList.forEach(sub => {
-                        const option = document.createElement('option');
-                        option.value = sub;
-                        option.textContent = sub;
-                        if (sub === subject) option.selected = true;
-                        subjectDropdown.appendChild(option);
+                        const opt = document.createElement('option');
+                        opt.value = sub;
+                        opt.textContent = sub;
+                        if (sub === subject) opt.selected = true;
+                        subjectDropdown.appendChild(opt);
                     });
 
-                    const attendanceDropdown = document.createElement('select');
-                    ['', 'Present', 'Absent', 'Class Cancelled'].forEach(status => {
+                    const selectStatus = document.createElement('select');
+                    ['', 'Present', 'Absent', 'Class Cancelled'].forEach(optText => {
                         const option = document.createElement('option');
-                        option.value = status;
-                        option.textContent = status;
-                        attendanceDropdown.appendChild(option);
+                        option.value = optText;
+                        option.textContent = optText;
+                        selectStatus.appendChild(option);
                     });
 
-                    attendanceDropdown.onchange = () => {
+                    subjectDropdown.onchange = () => {
+                        // Reset status when subject changes
+                        selectStatus.value = '';
+                        cell.className = '';
+                    };
+
+                    selectStatus.onchange = () => {
                         const selectedSubject = subjectDropdown.value;
                         if (!weekAttendance[selectedSubject]) {
                             weekAttendance[selectedSubject] = { present: 0, total: 0 };
                         }
 
-                        if (attendanceDropdown.value === 'Present') {
+                        if (selectStatus.value === 'Present') {
                             weekAttendance[selectedSubject].present++;
                             weekAttendance[selectedSubject].total++;
                             cell.className = 'present';
-                        } else if (attendanceDropdown.value === 'Absent') {
+                        } else if (selectStatus.value === 'Absent') {
                             weekAttendance[selectedSubject].total++;
                             cell.className = 'absent';
-                        } else if (attendanceDropdown.value === 'Class Cancelled') {
+                        } else if (selectStatus.value === 'Class Cancelled') {
                             cell.className = 'cancelled';
+                        } else {
+                            cell.className = '';
                         }
+
                         updateSummary();
                     };
 
                     cell.appendChild(subjectDropdown);
                     cell.appendChild(document.createElement('br'));
-                    cell.appendChild(attendanceDropdown);
+                    cell.appendChild(selectStatus);
                     row.appendChild(cell);
                 });
 
@@ -212,20 +223,25 @@
         function saveToSheet() {
             fetch(scriptURL, {
                 method: 'POST',
+                mode: 'no-cors', // 👈 This bypasses CORS issue
+                headers: {
+                    "Content-Type": "application/json"
+                },
                 body: JSON.stringify({
                     action: "submitAttendance",
                     username: username,
                     attendance: allWeeksAttendance,
                     timestamp: new Date().toISOString()
-                }),
-                headers: { "Content-Type": "application/json" }
-            })
-            .then(res => res.text())
-            .then(msg => alert("Saved: " + msg))
-            .catch(err => alert("Error: " + err));
+                })
+            }).then(() => {
+                alert("Attendance data submitted! (No response due to CORS)");
+            }).catch(err => {
+                alert("Error saving attendance: " + err);
+            });
         }
 
-        generateNextWeek(); // Load Week 1
+        // Load the first week
+        generateNextWeek();
     </script>
 </body>
 </html>
